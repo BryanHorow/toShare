@@ -1,0 +1,49 @@
+services:
+  mipueblo:
+    container_name: mipueblocontainer
+    build:
+      context: .
+      args:
+        CONTAINER_PORT: 8000
+    image: mipueblo:v1
+    restart: unless-stopped
+    volumes:
+      - $HOME/database:/var/lib/mysql
+    env_file:
+      - ${ENV_FILE}
+    expose:
+      - 8000
+    ports:
+      - "8000:8000"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/mipueblo
+      SPRING_DATASOURCE_USERNAME: 'root'
+      SPRING_DATASOURCE_PASSWORD: '1234'
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+    networks:
+      - internalnet
+
+  mysqldb:
+    container_name: mysqlcontainer
+    image: mysql:8.0.34
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    environment:
+      MYSQL_DATABASE: mipueblo
+      MYSQL_ROOT_PASSWORD: 1234
+      SERVICE_NAME: mysqldb
+    networks:
+      - internalnet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+networks:
+  internalnet:
+    driver: bridge
